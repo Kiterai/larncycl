@@ -2,10 +2,12 @@
 
 int main() {
     //Set HTTP listener address and port
-    drogon::app().addListener("0.0.0.0",80);
+    drogon::app().addListener("0.0.0.0",3000);
     //Load config file
     //drogon::app().loadConfigFile("../config.json");
     //Run HTTP framework,the method will block in the internal event loop
-    drogon::app().run();
+    drogon::app()
+        .enableSession(std::chrono::hours(6))
+        .run();
     return 0;
 }
