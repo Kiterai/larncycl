@@ -21,6 +21,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(${PROJECT_NAME} main.cc)
 
+find_package(unofficial-argon2 CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::argon2::libargon2)
+
+add_compile_definitions(NOMINMAX)
+
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
 # to add drogon 
