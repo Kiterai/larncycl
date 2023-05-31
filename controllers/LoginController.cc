@@ -1,10 +1,10 @@
 #include "LoginController.h"
-#include <argon2.h> 
+#include <argon2.h>
 #include <random>
 
 namespace Passwd {
 
-auto hash(std::string passwd) {
+auto hash(const std::string &passwd) {
     constexpr size_t itCost = 1;
     constexpr size_t memCost = 64;
     constexpr size_t parallel = 2;
@@ -28,7 +28,7 @@ auto hash(std::string passwd) {
     return std::string(buf);
 }
 
-bool verify(std::string passwd, std::string hash) {
+bool verify(const std::string &passwd, const std::string &hash) {
     auto res = argon2id_verify(hash.c_str(), passwd.c_str(), passwd.length());
     if (res == ARGON2_OK)
         return true;
@@ -42,7 +42,7 @@ bool verify(std::string passwd, std::string hash) {
 // Add definition of your processing function here
 void LoginController::login(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) const {
     const auto req_json = req->getJsonObject();
-    if(!req_json) {
+    if (!req_json) {
         Json::Value res;
         res["status"] = "error";
         res["message"] = "only json";
@@ -59,16 +59,24 @@ void LoginController::login(const HttpRequestPtr &req, std::function<void(const 
 
     auto id = req_json->get("id", "").asString();
     auto password = req_json->get("password", "").asString();
-    
-    Json::Value res;
-    if (id == "hoge" && password == "fuga") {
-        req->session()->insert("logined", true);
-        res["status"] = "success";
-    } else {
-        res["status"] = "failed";
-    }
 
-    callback(drogon::HttpResponse::newHttpJsonResponse(std::move(res)));
+    auto db_cli = drogon::app().getDbClient();
+    auto db_res = db_cli->execSqlSync("select password_hash from users where username = ?", id);
+
+    auto password_hash = db_res[0]["password_hash"].c_str();
+
+    if (Passwd::verify(password, password_hash)) {
+        req->session()->insert("logined", true);
+        Json::Value res;
+        res["status"] = "success";
+        callback(drogon::HttpResponse::newHttpJsonResponse(std::move(res)));
+    } else {
+        Json::Value res;
+        res["status"] = "failed";
+        auto resobj = drogon::HttpResponse::newHttpJsonResponse(std::move(res));
+        resobj->setStatusCode(drogon::HttpStatusCode::k401Unauthorized);
+        callback(resobj);
+    }
 }
 
 void LoginController::logout(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) const {
