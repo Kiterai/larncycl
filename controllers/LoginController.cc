@@ -62,6 +62,14 @@ void LoginController::login(const HttpRequestPtr &req, std::function<void(const 
 
     auto db_cli = drogon::app().getDbClient();
     auto db_res = db_cli->execSqlSync("select password_hash from users where username = ?", id);
+    if (db_res.empty()) {
+        Json::Value res;
+        res["status"] = "failed";
+        auto resobj = drogon::HttpResponse::newHttpJsonResponse(std::move(res));
+        resobj->setStatusCode(drogon::HttpStatusCode::k401Unauthorized);
+        callback(resobj);
+        return;
+    }
 
     auto password_hash = db_res[0]["password_hash"].c_str();
 
