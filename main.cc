@@ -33,7 +33,7 @@ int main() {
         auto db_cli = drogon::app().getDbClient();
 
         db_cli->execSqlSync(
-            "create table users if not exists (id int not null auto_increment, username varchar(32) not null, password_hash varchar(128) not null, primary key (id));"
+            "create table if not exists users (id int not null auto_increment, username varchar(32) not null, password_hash varchar(128) not null, primary key (id));"
         );
     });
 
