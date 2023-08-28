@@ -29,6 +29,14 @@ int main() {
 
     drogon::app().createDbClient("mysql", mariadb_hostname, 3306, mariadb_database, mariadb_username, mariadb_password);
 
+    drogon::app().registerBeginningAdvice([]() {
+        auto db_cli = drogon::app().getDbClient();
+
+        db_cli->execSqlSync(
+            "create table users if not exists (id int not null auto_increment, username varchar(32) not null, password_hash varchar(128) not null, primary key (id));"
+        );
+    });
+
     // Load config file
     // drogon::app().loadConfigFile("../config.json");
     // Run HTTP framework,the method will block in the internal event loop
